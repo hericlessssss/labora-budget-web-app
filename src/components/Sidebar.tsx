@@ -19,7 +19,7 @@ export function Sidebar() {
       <div className="flex flex-col h-full">
         <div className="p-6">
           <div className="flex items-center space-x-2">
-            <FileText className="h-8 w-8 text-primary" />
+            <img src="https://i.imgur.com/8cADajs.png" alt="Labora Tech" className="h-8 w-auto" />
             <span className="text-xl font-bold text-text font-poppins">Labora Tech</span>
           </div>
         </div>

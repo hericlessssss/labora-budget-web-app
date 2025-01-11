@@ -44,7 +44,6 @@ export function Login() {
 
       if (error) {
         if (error.message === 'Email not confirmed') {
-          // For unconfirmed emails, we'll try to sign up again
           const { error: signUpError } = await supabase.auth.signUp({
             email: data.email,
             password: data.password,
@@ -58,7 +57,6 @@ export function Login() {
 
           if (signUpError) throw signUpError;
           
-          // Try to sign in immediately since email confirmation is disabled
           const { error: secondSignInError } = await supabase.auth.signInWithPassword({
             email: data.email,
             password: data.password,
@@ -95,7 +93,6 @@ export function Login() {
 
       if (error) throw error;
 
-      // Try to sign in immediately since email confirmation is disabled
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
@@ -106,7 +103,6 @@ export function Login() {
         return;
       }
       
-      // If immediate sign-in fails, show success message and return to login
       setErrorMessage('Conta criada com sucesso! Faça login para continuar.');
       setIsRegistering(false);
       registerForm.reset();
@@ -120,11 +116,7 @@ export function Login() {
     <div className="min-h-screen bg-[#ECEFF1] flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         <div className="text-center">
-          {isRegistering ? (
-            <UserPlus className="mx-auto h-12 w-12 text-[#6A1B9A]" />
-          ) : (
-            <LogIn className="mx-auto h-12 w-12 text-[#6A1B9A]" />
-          )}
+          <img src="https://i.imgur.com/8cADajs.png" alt="Labora Tech" className="mx-auto h-16 w-auto" />
           <h2 className="mt-6 text-3xl font-bold text-[#212121] font-['Poppins']">
             {isRegistering ? 'Criar Conta' : 'Bem-vindo'}
           </h2>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,76 +8,40 @@ import { Save, ArrowLeft, Search, X } from 'lucide-react';
 import { Sidebar } from '../components/Sidebar';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
+type Client = {
+  id: string;
+  full_name: string;
+  cpf: string | null;
+  cnpj: string | null;
+};
+
+type Category = {
+  id: number;
+  name: string;
+  description: string | null;
+};
+
+type Service = {
+  id: number;
+  category_id: number;
+  name: string;
+  description: string | null;
+  default_description: string | null;
+  base_value: number | null;
+};
+
 const quoteSchema = z.object({
-  client_name: z.string().min(1, 'Nome do cliente é obrigatório')
-    .max(100, 'Nome muito longo')
-    .regex(/^[a-zA-ZÀ-ÿ\s]*$/, 'Nome deve conter apenas letras'),
+  client_name: z.string()
+    .min(1, 'Nome do cliente é obrigatório')
+    .max(100, 'Nome muito longo'),
   client_document: z.string()
     .min(1, 'Documento do cliente é obrigatório')
     .refine((val) => {
       const numbers = val.replace(/\D/g, '');
-      
-      if (numbers.length === 11) {
-        let sum = 0;
-        let rest;
-        
-        if (numbers === "00000000000") return false;
-        
-        for (let i = 1; i <= 9; i++) {
-          sum = sum + parseInt(numbers.substring(i - 1, i)) * (11 - i);
-        }
-        
-        rest = (sum * 10) % 11;
-        if (rest === 10 || rest === 11) rest = 0;
-        if (rest !== parseInt(numbers.substring(9, 10))) return false;
-        
-        sum = 0;
-        for (let i = 1; i <= 10; i++) {
-          sum = sum + parseInt(numbers.substring(i - 1, i)) * (12 - i);
-        }
-        
-        rest = (sum * 10) % 11;
-        if (rest === 10 || rest === 11) rest = 0;
-        if (rest !== parseInt(numbers.substring(10, 11))) return false;
-        
-        return true;
-      }
-      
-      if (numbers.length === 14) {
-        if (numbers === "00000000000000") return false;
-        
-        let size = numbers.length - 2;
-        let numbers_array = numbers.split('');
-        let digits = numbers.substr(size);
-        let sum = 0;
-        let pos = size - 7;
-        
-        for (let i = size; i >= 1; i--) {
-          sum += numbers_array[size - i] * pos--;
-          if (pos < 2) pos = 9;
-        }
-        
-        let result = sum % 11 < 2 ? 0 : 11 - sum % 11;
-        if (result !== parseInt(digits.charAt(0))) return false;
-        
-        size = size + 1;
-        numbers_array = numbers.split('');
-        sum = 0;
-        pos = size - 7;
-        
-        for (let i = size; i >= 1; i--) {
-          sum += numbers_array[size - i] * pos--;
-          if (pos < 2) pos = 9;
-        }
-        
-        result = sum % 11 < 2 ? 0 : 11 - sum % 11;
-        if (result !== parseInt(digits.charAt(1))) return false;
-        
-        return true;
-      }
-      
-      return false;
+      return numbers.length === 11 || numbers.length === 14;
     }, 'CPF ou CNPJ inválido'),
+  category_id: z.number().optional(),
+  service_id: z.number().optional(),
   service_description: z.string()
     .min(1, 'Descrição do serviço é obrigatória')
     .max(1000, 'Descrição muito longa'),
@@ -94,29 +58,81 @@ const quoteSchema = z.object({
 
 type QuoteForm = z.infer<typeof quoteSchema>;
 
-type Client = {
-  id: string;
-  full_name: string;
-  cpf: string | null;
-  cnpj: string | null;
-};
-
 export function NewQuote() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     setValue,
     watch,
   } = useForm<QuoteForm>({
     resolver: zodResolver(quoteSchema),
   });
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCategory) {
+      fetchServices(selectedCategory);
+    } else {
+      setServices([]);
+    }
+  }, [selectedCategory]);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('service_categories')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  const fetchServices = async (categoryId: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('category_id', categoryId)
+        .order('name');
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar serviços:', error);
+    }
+  };
+
+  const handleServiceChange = (serviceId: string) => {
+    const service = services.find(s => s.id === parseInt(serviceId));
+    if (service) {
+      if (service.default_description) {
+        setValue('service_description', service.default_description);
+      }
+      if (service.base_value) {
+        setValue('value', service.base_value.toString());
+      }
+    }
+  };
 
   const formatDocument = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -185,11 +201,13 @@ export function NewQuote() {
           status: 'pending',
           user_id: userData.user.id,
           client_id: selectedClient?.id || null,
+          category_id: data.category_id || null,
+          service_id: data.service_id || null,
         },
       ]);
 
       if (error) throw error;
-      navigate('/dashboard');
+      navigate('/quotes');
     } catch (error) {
       console.error('Erro ao criar orçamento:', error);
     }
@@ -321,6 +339,50 @@ export function NewQuote() {
               </div>
             </div>
 
+            {/* Seleção de Serviço */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h2 className="text-xl font-semibold text-text mb-4">Serviço</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1">
+                    Categoria
+                  </label>
+                  <select
+                    {...register('category_id', {
+                      onChange: (e) => setSelectedCategory(parseInt(e.target.value))
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="">Selecione uma categoria...</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1">
+                    Serviço
+                  </label>
+                  <select
+                    {...register('service_id')}
+                    onChange={(e) => handleServiceChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    disabled={!selectedCategory}
+                  >
+                    <option value="">Selecione um serviço...</option>
+                    {services.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-text mb-1">
                 Descrição do Serviço
@@ -397,8 +459,7 @@ export function NewQuote() {
             <div className="flex justify-end pt-4">
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="flex items-center px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
               >
                 <Save className="h-5 w-5 mr-2" />
                 Salvar Orçamento
