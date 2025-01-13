@@ -126,7 +126,196 @@ export function QuotesList() {
   };
 
   const generatePDF = (quote: Quote) => {
-    // ... (rest of the PDF generation code remains the same)
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 20;
+      let currentY = margin;
+
+      // Cabeçalho
+      const logoUrl = 'https://i.imgur.com/8cADajs.png';
+      doc.addImage(logoUrl, 'PNG', margin, currentY, 40, 40);
+
+      // Informações da empresa (à direita)
+      doc.setFontSize(10);
+      const rightMargin = pageWidth - margin;
+      doc.text('Labora Tech - Soluções em Tecnologia', rightMargin, currentY + 8, { align: 'right' });
+      doc.text('CNPJ: 55.707.870/0001-97', rightMargin, currentY + 14, { align: 'right' });
+      doc.text('C1 LOTE 11, entrada C', rightMargin, currentY + 20, { align: 'right' });
+      doc.text('Tel: (61) 99815-9297', rightMargin, currentY + 26, { align: 'right' });
+      doc.text('E-mail: laborad.sign@gmail.com', rightMargin, currentY + 32, { align: 'right' });
+
+      // Linha divisória após o cabeçalho
+      currentY += 45;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+
+      // Número do orçamento e data
+      currentY += 15;
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text(`ORÇAMENTO Nº ${quote.number}`, margin, currentY);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(
+        `Data: ${format(new Date(quote.created_at), 'dd/MM/yyyy', { locale: ptBR })}`,
+        rightMargin,
+        currentY,
+        { align: 'right' }
+      );
+
+      // Dados do Cliente
+      currentY += 20;
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('DADOS DO CLIENTE', margin, currentY);
+      
+      currentY += 8;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Nome: ${quote.client_name}`, margin, currentY);
+      currentY += 6;
+      doc.text(`Documento: ${quote.client_document}`, margin, currentY);
+
+      // Descrição do Serviço
+      currentY += 15;
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('DESCRIÇÃO DO SERVIÇO', margin, currentY);
+      
+      currentY += 8;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      const splitDescription = doc.splitTextToSize(quote.service_description, pageWidth - (2 * margin));
+      doc.text(splitDescription, margin, currentY);
+      currentY += (splitDescription.length * 6) + 8;
+
+      // Observações (se houver)
+      if (quote.observations) {
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('OBSERVAÇÕES', margin, currentY);
+        
+        currentY += 8;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        const splitObservations = doc.splitTextToSize(quote.observations, pageWidth - (2 * margin));
+        doc.text(splitObservations, margin, currentY);
+        currentY += (splitObservations.length * 6) + 8;
+      }
+
+      // Valor e Forma de Pagamento em destaque
+      doc.setDrawColor(230, 230, 230);
+      doc.setFillColor(250, 250, 250);
+      const paymentBoxY = currentY;
+      doc.rect(margin, currentY, pageWidth - (2 * margin), 30, 'F');
+      
+      currentY += 8;
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('VALOR TOTAL:', margin + 5, currentY);
+      doc.text('FORMA DE PAGAMENTO:', pageWidth/2, currentY);
+      
+      currentY += 8;
+      doc.setFontSize(11);
+      doc.setTextColor(0, 100, 0);
+      doc.text(new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(quote.value), margin + 5, currentY);
+      
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(undefined, 'normal');
+      doc.text(quote.payment_method, pageWidth/2, currentY);
+
+      currentY += 20;
+
+      // Validade e Termos
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text('Validade do Orçamento: 5 dias a partir da data de emissão.', margin, currentY);
+      
+      // Termos e Condições em box
+      currentY += 15;
+      doc.setFillColor(250, 250, 250);
+      const termsBoxY = currentY;
+      doc.rect(margin, currentY, pageWidth - (2 * margin), 35, 'F');
+      
+      currentY += 7;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('TERMOS E CONDIÇÕES', margin + 5, currentY);
+      
+      currentY += 7;
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      const terms = [
+        '1. A Labora Tech garante sigilo absoluto sobre todas as informações fornecidas pelo cliente.',
+        '2. O prazo de execução será definido após a aprovação do orçamento.',
+        '3. Este orçamento não inclui serviços adicionais não especificados.',
+        '4. Alterações no escopo podem resultar em ajustes no valor final.',
+        '5. A garantia dos serviços é de 90 dias após a conclusão.'
+      ];
+      
+      terms.forEach((term, index) => {
+        doc.text(term, margin + 5, currentY + (index * 5));
+      });
+
+      currentY += 45;
+
+      // Status do orçamento (se não estiver pendente)
+      if (quote.status !== 'pending') {
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        
+        if (quote.status === 'approved') {
+          doc.setTextColor(0, 128, 0);
+          doc.text('APROVADO', pageWidth/2, currentY, { align: 'center' });
+        } else {
+          doc.setTextColor(128, 0, 0);
+          doc.text('REPROVADO', pageWidth/2, currentY, { align: 'center' });
+          
+          if (quote.rejection_reason) {
+            currentY += 10;
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Motivo:', margin, currentY);
+            const splitReason = doc.splitTextToSize(quote.rejection_reason, pageWidth - (2 * margin));
+            doc.setFont(undefined, 'normal');
+            doc.text(splitReason, margin, currentY + 6);
+          }
+        }
+        doc.setTextColor(0, 0, 0);
+      }
+
+      // Rodapé
+      const footerY = pageHeight - 25;
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      
+      // Linha divisória do rodapé
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+      
+      // Informações do rodapé em três colunas
+      const col1X = margin;
+      const col2X = pageWidth/2;
+      const col3X = pageWidth - margin;
+      
+      doc.text('Labora Tech - Soluções em Tecnologia', col1X, footerY);
+      doc.text('Tel: (61) 99815-9297', col2X, footerY, { align: 'center' });
+      doc.text('laborad.sign@gmail.com', col3X, footerY, { align: 'right' });
+      
+      doc.text('C1 LOTE 11, entrada C', col1X, footerY + 5);
+      doc.text('CNPJ: 55.707.870/0001-97', col2X, footerY + 5, { align: 'center' });
+      doc.text('Documento gerado automaticamente', col3X, footerY + 5, { align: 'right' });
+
+      // Salvar o PDF
+      doc.save(`ORCAMENTO-LABORA-TECH-${quote.number}.pdf`);
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+    }
   };
 
   const formatStatus = (status: string) => {
