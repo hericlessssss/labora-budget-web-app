@@ -40,18 +40,16 @@ const quoteSchema = z.object({
       const numbers = val.replace(/\D/g, '');
       return numbers.length === 11 || numbers.length === 14;
     }, 'CPF ou CNPJ inválido'),
-  category_id: z.number().optional(),
-  service_id: z.number().optional(),
+  category_id: z.number().nullable(),
+  service_id: z.number().nullable(),
   service_description: z.string()
     .min(1, 'Descrição do serviço é obrigatória')
     .max(1000, 'Descrição muito longa'),
   observations: z.string()
     .max(500, 'Observações muito longas')
     .optional(),
-  value: z.string()
-    .min(1, 'Valor é obrigatório')
-    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, 'Valor deve ser maior que zero')
-    .transform((val) => parseFloat(val)),
+  value: z.number()
+    .min(0.01, 'Valor deve ser maior que zero'),
   payment_method: z.string()
     .min(1, 'Método de pagamento é obrigatório'),
 });
@@ -68,6 +66,7 @@ export function NewQuote() {
   const [services, setServices] = useState<Service[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     register,
@@ -77,6 +76,11 @@ export function NewQuote() {
     watch,
   } = useForm<QuoteForm>({
     resolver: zodResolver(quoteSchema),
+    defaultValues: {
+      category_id: null,
+      service_id: null,
+      value: 0,
+    },
   });
 
   useEffect(() => {
@@ -129,7 +133,7 @@ export function NewQuote() {
         setValue('service_description', service.default_description);
       }
       if (service.base_value) {
-        setValue('value', service.base_value.toString());
+        setValue('value', service.base_value);
       }
     }
   };
@@ -189,27 +193,31 @@ export function NewQuote() {
 
   const onSubmit = async (data: QuoteForm) => {
     try {
+      setSubmitting(true);
       const { data: userData } = await supabase.auth.getUser();
       
       if (!userData?.user) {
         throw new Error('Usuário não autenticado');
       }
 
-      const { error } = await supabase.from('quotes').insert([
-        {
-          ...data,
-          status: 'pending',
-          user_id: userData.user.id,
-          client_id: selectedClient?.id || null,
-          category_id: data.category_id || null,
-          service_id: data.service_id || null,
-        },
-      ]);
+      const quoteData = {
+        ...data,
+        value: Number(data.value),
+        category_id: data.category_id || null,
+        service_id: data.service_id || null,
+        status: 'pending',
+        user_id: userData.user.id,
+        client_id: selectedClient?.id || null,
+      };
+
+      const { error } = await supabase.from('quotes').insert([quoteData]);
 
       if (error) throw error;
       navigate('/quotes');
     } catch (error) {
       console.error('Erro ao criar orçamento:', error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -349,7 +357,13 @@ export function NewQuote() {
                   </label>
                   <select
                     {...register('category_id', {
-                      onChange: (e) => setSelectedCategory(parseInt(e.target.value))
+                      onChange: (e) => {
+                        const value = e.target.value ? parseInt(e.target.value) : null;
+                        setSelectedCategory(value);
+                        setValue('category_id', value);
+                        setValue('service_id', null);
+                      },
+                      setValueAs: (value) => value ? parseInt(value) : null
                     })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   >
@@ -360,6 +374,9 @@ export function NewQuote() {
                       </option>
                     ))}
                   </select>
+                  {errors.category_id && (
+                    <p className="mt-1 text-sm text-red-600">{errors.category_id.message}</p>
+                  )}
                 </div>
 
                 <div>
@@ -367,8 +384,10 @@ export function NewQuote() {
                     Serviço
                   </label>
                   <select
-                    {...register('service_id')}
-                    onChange={(e) => handleServiceChange(e.target.value)}
+                    {...register('service_id', {
+                      onChange: (e) => handleServiceChange(e.target.value),
+                      setValueAs: (value) => value ? parseInt(value) : null
+                    })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     disabled={!selectedCategory}
                   >
@@ -379,6 +398,9 @@ export function NewQuote() {
                       </option>
                     ))}
                   </select>
+                  {errors.service_id && (
+                    <p className="mt-1 text-sm text-red-600">{errors.service_id.message}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -421,7 +443,9 @@ export function NewQuote() {
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-gray-500">R$</span>
                   <input
-                    {...register('value')}
+                    {...register('value', {
+                      setValueAs: (value) => Number(value)
+                    })}
                     type="number"
                     step="0.01"
                     min="0"
@@ -459,10 +483,17 @@ export function NewQuote() {
             <div className="flex justify-end pt-4">
               <button
                 type="submit"
-                className="flex items-center px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+                disabled={submitting}
+                className="flex items-center px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50"
               >
-                <Save className="h-5 w-5 mr-2" />
-                Salvar Orçamento
+                {submitting ? (
+                  <LoadingSpinner />
+                ) : (
+                  <>
+                    <Save className="h-5 w-5 mr-2" />
+                    Salvar Orçamento
+                  </>
+                )}
               </button>
             </div>
           </form>
