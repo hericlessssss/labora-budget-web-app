@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Sidebar } from '../components/Sidebar';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 type DashboardStats = {
@@ -77,7 +76,6 @@ export function Dashboard() {
         const totalValue = quotes.reduce((sum, q) => sum + (q.value || 0), 0);
         const recentQuotes = quotes.slice(0, 5);
 
-        // Calcular receita mensal dos últimos 6 meses
         const monthlyRevenue = Array.from({ length: 6 }).map((_, index) => {
           const currentMonth = subMonths(new Date(), index);
           const start = startOfMonth(currentMonth);
@@ -146,47 +144,46 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="ml-64 p-8">
+      <div className="p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text font-poppins">Dashboard</h1>
           <p className="text-gray-600 font-open-sans">Bem-vindo ao sistema de orçamentos</p>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
-            <h3 className="text-lg font-semibold text-text font-poppins mb-2">Orçamentos Pendentes</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
+            <h3 className="text-lg font-semibold text-yellow-800 font-poppins mb-2">Orçamentos Pendentes</h3>
             <div className="text-3xl font-bold text-yellow-600">
               {loading ? <LoadingSpinner /> : stats.pendingCount}
             </div>
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-yellow-700">
               Valor total: {loading ? <LoadingSpinner /> : formatCurrency(stats.pendingValue)}
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
-            <h3 className="text-lg font-semibold text-text font-poppins mb-2">Orçamentos Aprovados</h3>
+          <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
+            <h3 className="text-lg font-semibold text-green-800 font-poppins mb-2">Orçamentos Aprovados</h3>
             <div className="text-3xl font-bold text-green-600">
               {loading ? <LoadingSpinner /> : stats.approvedCount}
             </div>
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-green-700">
               Valor total: {loading ? <LoadingSpinner /> : formatCurrency(stats.approvedValue)}
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
-            <h3 className="text-lg font-semibold text-text font-poppins mb-2">Orçamentos Rejeitados</h3>
+          <div className="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
+            <h3 className="text-lg font-semibold text-red-800 font-poppins mb-2">Orçamentos Rejeitados</h3>
             <div className="text-3xl font-bold text-red-600">
               {loading ? <LoadingSpinner /> : stats.rejectedCount}
             </div>
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-red-700">
               Valor total: {loading ? <LoadingSpinner /> : formatCurrency(stats.rejectedValue)}
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
-            <h3 className="text-lg font-semibold text-text font-poppins mb-2">Taxa de Aprovação</h3>
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
+            <h3 className="text-lg font-semibold text-blue-800 font-poppins mb-2">Taxa de Aprovação</h3>
             <div className="text-3xl font-bold text-blue-600">
               {loading ? (
                 <LoadingSpinner />
@@ -196,17 +193,17 @@ export function Dashboard() {
                   : 0}%`
               )}
             </div>
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-blue-700">
               Aprovados / Total
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
-            <h3 className="text-lg font-semibold text-text font-poppins mb-2">Valor Total</h3>
-            <div className="text-3xl font-bold text-primary">
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">
+            <h3 className="text-lg font-semibold text-purple-800 font-poppins mb-2">Valor Total</h3>
+            <div className="text-3xl font-bold text-purple-600">
               {loading ? <LoadingSpinner /> : formatCurrency(stats.totalValue)}
             </div>
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-purple-700">
               Todos os orçamentos
             </div>
           </div>
@@ -281,7 +278,7 @@ export function Dashboard() {
                   <th className="text-right py-3 px-4 font-semibold text-yellow-600">Pendente</th>
                   <th className="text-right py-3 px-4 font-semibold text-green-600">Aprovado</th>
                   <th className="text-right py-3 px-4 font-semibold text-red-600">Rejeitado</th>
-                  <th className="text-right py-3 px-4 font-semibold text-primary">Total</th>
+                  <th className="text-right py-3 px-4 font-semibold text-purple-600">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -303,16 +300,16 @@ export function Dashboard() {
                       <td className="py-3 px-4 font-medium">
                         {month.month}
                       </td>
-                      <td className="py-3 px-4 text-right text-yellow-600">
+                      <td className="py-3 px-4 text-right text-yellow-600 font-medium">
                         {formatCurrency(month.pendingValue)}
                       </td>
-                      <td className="py-3 px-4 text-right text-green-600">
+                      <td className="py-3 px-4 text-right text-green-600 font-medium">
                         {formatCurrency(month.approvedValue)}
                       </td>
-                      <td className="py-3 px-4 text-right text-red-600">
+                      <td className="py-3 px-4 text-right text-red-600 font-medium">
                         {formatCurrency(month.rejectedValue)}
                       </td>
-                      <td className="py-3 px-4 text-right font-medium text-primary">
+                      <td className="py-3 px-4 text-right font-medium text-purple-600">
                         {formatCurrency(month.totalValue)}
                       </td>
                     </tr>
@@ -321,7 +318,7 @@ export function Dashboard() {
               </tbody>
               {!loading && stats.monthlyRevenue.length > 0 && (
                 <tfoot className="border-t">
-                  <tr className="font-bold">
+                  <tr className="font-bold bg-gray-50">
                     <td className="py-3 px-4">Total Geral</td>
                     <td className="py-3 px-4 text-right text-yellow-600">
                       {formatCurrency(
@@ -338,7 +335,7 @@ export function Dashboard() {
                         stats.monthlyRevenue.reduce((sum, month) => sum + month.rejectedValue, 0)
                       )}
                     </td>
-                    <td className="py-3 px-4 text-right text-primary">
+                    <td className="py-3 px-4 text-right text-purple-600">
                       {formatCurrency(
                         stats.monthlyRevenue.reduce((sum, month) => sum + month.totalValue, 0)
                       )}

@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { Sidebar } from '../components/Sidebar';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 type Quote = {
@@ -329,8 +328,7 @@ export function QuotesList() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="ml-64 p-8">
+      <div className="p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text font-poppins">Orçamentos</h1>
           <p className="text-gray-600 font-open-sans">Gerencie seus orçamentos</p>

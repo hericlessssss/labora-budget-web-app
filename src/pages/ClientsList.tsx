@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 import { UserPlus, Pencil, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Sidebar } from '../components/Sidebar';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 type Client = {
@@ -54,16 +53,15 @@ export function ClientsList() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="ml-64 p-8">
-        <div className="mb-8 flex items-center justify-between">
+      <div className="p-8">
+        <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-text font-poppins">Clientes</h1>
             <p className="text-gray-600 font-open-sans">Gerencie seus clientes</p>
           </div>
           <button
             onClick={() => navigate('/new-client')}
-            className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+            className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors w-full sm:w-auto justify-center sm:justify-start"
           >
             <UserPlus className="h-5 w-5 mr-2" />
             Novo Cliente
@@ -87,16 +85,16 @@ export function ClientsList() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Nome
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                       Documento
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Contato
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                       Cidade/UF
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                       Cadastro
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -107,15 +105,15 @@ export function ClientsList() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {clients.map((client) => (
                     <tr key={client.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">
                           {client.full_name}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {client.email}
+                        <div className="text-sm text-gray-500 block md:hidden">
+                          {client.cpf || client.cnpj}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                         {client.cpf || client.cnpj}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -129,10 +127,10 @@ export function ClientsList() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
                         {client.address.city}/{client.address.state}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
                         {format(new Date(client.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

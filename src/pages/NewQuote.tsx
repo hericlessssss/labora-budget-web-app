@@ -4,8 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Save, ArrowLeft, Search, X } from 'lucide-react';
-import { Sidebar } from '../components/Sidebar';
+import { Save, ArrowLeft, Search, X, Phone } from 'lucide-react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 type Client = {
@@ -223,8 +222,7 @@ export function NewQuote() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="ml-64 p-8">
+      <div className="p-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <button
@@ -239,7 +237,7 @@ export function NewQuote() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 max-w-3xl">
+        <div className="bg-white rounded-lg shadow-md p-6 max-w-3xl mx-auto">
           {/* Busca de Cliente */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-text mb-4">Buscar Cliente Cadastrado</h2>
