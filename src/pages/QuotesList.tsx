@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Eye, Download, CheckCircle, XCircle } from 'lucide-react';
+import { Eye, Download, CheckCircle, XCircle, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
@@ -12,13 +12,13 @@ type Quote = {
   id: string;
   number: number;
   client_name: string;
+  client_document: string;
   service_description: string;
   value: number;
+  payment_method: string;
   status: string;
   rejection_reason?: string;
   created_at: string;
-  payment_method: string;
-  client_document: string;
   observations?: string;
 };
 
@@ -134,25 +134,25 @@ export function QuotesList() {
 
       // Cabeçalho
       const logoUrl = 'https://i.imgur.com/8cADajs.png';
-      doc.addImage(logoUrl, 'PNG', margin, currentY, 40, 40);
+      doc.addImage(logoUrl, 'PNG', margin, currentY, 30, 30);
 
       // Informações da empresa (à direita)
-      doc.setFontSize(10);
+      doc.setFontSize(8);
       const rightMargin = pageWidth - margin;
       doc.text('Labora Tech - Soluções em Tecnologia', rightMargin, currentY + 8, { align: 'right' });
-      doc.text('CNPJ: 55.707.870/0001-97', rightMargin, currentY + 14, { align: 'right' });
-      doc.text('C1 LOTE 11, entrada C', rightMargin, currentY + 20, { align: 'right' });
-      doc.text('Tel: (61) 99815-9297', rightMargin, currentY + 26, { align: 'right' });
-      doc.text('E-mail: laborad.sign@gmail.com', rightMargin, currentY + 32, { align: 'right' });
+      doc.text('CNPJ: 55.707.870/0001-97', rightMargin, currentY + 12, { align: 'right' });
+      doc.text('C1 LOTE 11, entrada C', rightMargin, currentY + 16, { align: 'right' });
+      doc.text('Tel: (61) 99815-9297', rightMargin, currentY + 20, { align: 'right' });
+      doc.text('E-mail: laborad.sign@gmail.com', rightMargin, currentY + 24, { align: 'right' });
 
       // Linha divisória após o cabeçalho
-      currentY += 45;
+      currentY += 35;
       doc.setDrawColor(200, 200, 200);
       doc.line(margin, currentY, pageWidth - margin, currentY);
 
       // Número do orçamento e data
       currentY += 15;
-      doc.setFontSize(16);
+      doc.setFontSize(14);
       doc.setFont(undefined, 'bold');
       doc.text(`ORÇAMENTO Nº ${quote.number}`, margin, currentY);
       doc.setFontSize(10);
@@ -207,7 +207,6 @@ export function QuotesList() {
       // Valor e Forma de Pagamento em destaque
       doc.setDrawColor(230, 230, 230);
       doc.setFillColor(250, 250, 250);
-      const paymentBoxY = currentY;
       doc.rect(margin, currentY, pageWidth - (2 * margin), 30, 'F');
       
       currentY += 8;
@@ -238,7 +237,6 @@ export function QuotesList() {
       // Termos e Condições em box
       currentY += 15;
       doc.setFillColor(250, 250, 250);
-      const termsBoxY = currentY;
       doc.rect(margin, currentY, pageWidth - (2 * margin), 35, 'F');
       
       currentY += 7;
@@ -314,6 +312,7 @@ export function QuotesList() {
       doc.save(`ORCAMENTO-LABORA-TECH-${quote.number}.pdf`);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
+      alert('Erro ao gerar PDF. Tente novamente.');
     }
   };
 

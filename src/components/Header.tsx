@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, LogOut, PlusCircle, ClipboardList, Users, Menu, X } from 'lucide-react';
+import { LayoutDashboard, LogOut, PlusCircle, ClipboardList, Users, Menu, X, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export function Header() {
@@ -19,6 +19,7 @@ export function Header() {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/new-quote', icon: PlusCircle, label: 'Novo Orçamento' },
     { path: '/quotes', icon: ClipboardList, label: 'Orçamentos' },
+    { path: '/contracts', icon: FileText, label: 'Contratos' },
     { path: '/clients', icon: Users, label: 'Clientes' },
   ];
 
